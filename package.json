@@ -1,0 +1,29 @@
+{
+  "name": "llm-browser",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/main.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node dist/main.js",
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "llm-xpath": "github:lilezek/llm-xpath",
+    "selenium-webdriver": "^4.18.1"
+  },
+  "devDependencies": {
+    "@types/selenium-webdriver": "^4.1.21",
+    "buffer": "^6.0.3",
+    "chrome-types": "^0.1.270",
+    "dotenv": "^16.4.5",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.4.2",
+    "webpack": "^5.90.3",
+    "webpack-cli": "^5.1.4"
+  }
+}
