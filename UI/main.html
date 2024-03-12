@@ -1,7 +1,11 @@
 <html>
   <body>
-    <h1>Hello Extensions</h1>
-    <button id="exec">Execute</button>
+    <link rel="stylesheet" href="main.css" />
+    <textarea id="chat" rows="10" cols="50" readonly></textarea>
+    <div class="flex">
+      <input class="grow" id="input" type="text" />
+      <button id="exec">Send</button>
+    </div>
   </body>
   <script src="/dist/extension/bundle.js" type="module"></script>
 </html>
