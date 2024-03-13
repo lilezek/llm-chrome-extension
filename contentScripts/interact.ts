@@ -23,6 +23,7 @@ export function clickElement(selector: Selector) {
     }
 }
 
+// TODO: replace this list with the same list as in Selenium.
 export const KeyCodes = {
     Enter: 13,
     ArrowLeft: 37,
@@ -39,7 +40,7 @@ const Codes = Object.entries(KeyCodes).reduce((acc, [key, value]) => {
 
 
 /**
- * Simulates keypress, keydown, and keyup events on an element
+ * Simulates keypress, keydown, input and keyup events on an element
  */
 function simulateKeyEvents(el: HTMLElement, keyCode: number, key?: string) {
     key = key ?? Codes[keyCode];
@@ -63,6 +64,14 @@ function simulateKeyEvents(el: HTMLElement, keyCode: number, key?: string) {
         key,
     });
     el.dispatchEvent(kPress);
+
+    const kInput = new InputEvent('input', {
+        bubbles: true,
+        cancelable: true,
+        // view: window,
+        data: key,
+    });
+    el.dispatchEvent(kInput);
 
     const kUp = new KeyboardEvent('keyup', {
         bubbles: true,
@@ -98,9 +107,19 @@ export async function sendKeysToElement(selector: Selector, ...keys: Array<strin
         
         for (const key of keys) {
             if (typeof key === 'string') {
-                if ('value' in el && typeof el.value === "string") {
+                // An input or textarea element
+                if ((el instanceof HTMLInputElement) || (el instanceof HTMLTextAreaElement)) {
                     el.value = el.value + key;
-                    await sleep(key.length * 100);         
+                    // Simulate the last character
+                    simulateKeyEvents(el, key.charCodeAt(key.length-1), key[key.length-1]);
+                    await sleep(key.length * 100);
+                } 
+                // A contenteditable element
+                else if (el.isContentEditable) {
+                    el.innerHTML = el.innerHTML + key;
+                    // Simulate the last character
+                    simulateKeyEvents(el, key.charCodeAt(key.length-1), key[key.length-1]);
+                    await sleep(key.length * 100);
                 } else {
                     // Simulate each character
                     for (const char of key) {
