@@ -4,11 +4,25 @@ import { XMLParser } from "llm-xpath/dist/dependencies/xml.js";
 import { XPath } from "llm-xpath/dist/dependencies/xpath.js";
 import { Storage } from "llm-xpath/dist/dependencies/storage.js";
 
+const firstElementRE = /<([a-zA-Z0-9]+)[^>]*>/;
+
 const domParser = new DependencyDOMParser({
     parse: (html) => {
-        const element = document.createElement('html');
-        element.innerHTML = html;
-        return element;
+        const firstElement = html.match(firstElementRE);
+
+        if (!firstElement) {
+            throw new Error('Invalid HTML');
+        }
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        
+        if (firstElement[1] === 'html') {
+            return doc.documentElement;
+        } else if (firstElement[1] === 'body') {
+            return doc.body;
+        } 
+        return doc.body.firstElementChild!;
     }
 });
 
