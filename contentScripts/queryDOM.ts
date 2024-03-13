@@ -6,6 +6,11 @@ function GetCcssPathFromElement(el: Node | null) {
         let selector = el.nodeName.toLowerCase();
         if (el instanceof Element && el.id) {
             selector += '#' + escapeId(el.id);
+            // Break if the id is unique
+            if (document.querySelectorAll(selector).length === 1) {
+                path.unshift(selector);
+                break;
+            }
         } else {
             let sibling: Node | null = el;
             let nth = 0;
