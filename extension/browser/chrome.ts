@@ -1,4 +1,6 @@
 import { ClientsideFunctionArgs, ClientsideFunctionReturn, ClientsideFunctions } from "../../contentScripts/main.js";
+import llm_selector from "../AI/llm_selector.js";
+import chat from "../chat/chat.js";
 
 export class BrowsingContent {
     private tabs: Map<number, Tab> = new Map();
@@ -29,13 +31,21 @@ export class Tab {
         xpath?: string;
     } = {};
     private implicitWaitPromise: Promise<void> | null = null;
+    private title: string = "";
+    private url: string = "";
 
     constructor(private chromeTab: chrome.tabs.Tab, private context: BrowsingContent) {
         this.chromeTab = chromeTab;
 
         let solver: () => void = () => {};
         chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-            console.log(tabId, changeInfo, tab);
+            if (tab.title) {
+                this.title = tab.title;
+            }
+
+            if (tab.url) {
+                this.url = tab.url;
+            }
 
             if (tabId === this.chromeTab.id && changeInfo.status === "loading") {
                 this.implicitWaitPromise = this.implicitWaitPromise ?? 
@@ -82,6 +92,18 @@ export class Tab {
         }
     }
 
+    private setLastElementSelector(selector: string) {
+        this.lastSelectedElement = {
+            selector
+        };
+    }
+
+    private setLastElementXPath(xpath: string) {
+        this.lastSelectedElement = {
+            xpath
+        };
+    }
+
     async navigateTo(url: string) {
         await chrome.tabs.update(
             this.chromeTab.id!,
@@ -90,7 +112,7 @@ export class Tab {
             });
     }
 
-    async getSource() {
+    private async getSource() {
         await this.implicitWait();
         return this.runInClient(this.chromeTab.id!, "getFullDOM")
             .then((a) => a[0].result);
@@ -99,7 +121,7 @@ export class Tab {
     /**
      * @returns A list of strings (html) representing the tabbable elements in the page.
      */
-    async getTabbableVisibleElements() {
+    private async getTabbableVisibleElements() {
         await this.implicitWait();
         return this.runInClient(this.chromeTab.id!, "getTabbableVisibleElements")
             .then((a) => a[0].result);
@@ -115,15 +137,31 @@ export class Tab {
         this.runInClient(this.chromeTab.id!, "sendKeysToElement", this.lastSelectedElement, ...keys);
     }
 
-    setLastElementSelector(selector: string) {
-        this.lastSelectedElement = {
-            selector
-        };
-    }
+    async findElement(description: string) {
+        chat.writeAssistantMessage(`Finding element: ${description}`);
+        const context = `${this.title} - ${this.url}`;
 
-    setLastElementXPath(xpath: string) {
-        this.lastSelectedElement = {
-            xpath
-        };
+        // First, try to find the element from tabbable elements
+        const tabbable = await this.getTabbableVisibleElements();
+        const elements = tabbable.map((el) => el.html);
+        const selectors = tabbable.map((el) => el.selector);
+        const found = await llm_selector.findInList(elements, context, description);
+        if (found !== -1) {
+            this.setLastElementSelector(selectors[found]);
+            return;
+        }
+
+        // If not found, try to find the element from the whole page
+        const source = await this.getSource();
+        for await (const res of llm_selector.findXPath(source, context, description)) {
+            if (!res.cached) {
+                await res.save();
+            }
+            this.setLastElementXPath(res.xpath);
+            return;
+        }
+
+        chat.writeAssistantMessage(`Element not found: ${description}`);
+        throw new Error(`Element not found: ${description}`);
     }
 }

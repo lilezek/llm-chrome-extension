@@ -63,7 +63,7 @@ export function getTabbableVisibleElements() {
 
             return true;
         }).map((el) => {
-            return el.outerHTML;
+            return {html: el.outerHTML, selector: GetCcssPathFromElement(el)};
         });
 }
 
