@@ -17,6 +17,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "chatgpt": "^5.2.5",
     "llm-xpath": "github:lilezek/llm-xpath",
     "selenium-webdriver": "^4.18.1"
   },

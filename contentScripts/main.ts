@@ -6,7 +6,7 @@ const smartBrowsing = {
     getTabbableVisibleElements,
     sendKeysToElement,
     clickElement,
-};
+} as const;
 
 (window as any).smartBrowsing = smartBrowsing;
 

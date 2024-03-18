@@ -1,30 +1,3 @@
-import { ClientsideFunctionArgs, ClientsideFunctionReturn, ClientsideFunctions } from "../../contentScripts/main.js";
-import llm_selector from "../AI/llm_selector.js";
-import chat from "../chat/chat.js";
-
-export class BrowsingContent {
-    private tabs: Map<number, Tab> = new Map();
-
-    async getCurrentTab() {
-        const tabId = await new Promise<number>((resolve) => {
-            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                if (!this.tabs.has(tabs[0].id!)) {
-                    this.tabs.set(tabs[0].id!, new Tab(tabs[0], this));
-
-                }
-                resolve(tabs[0].id!);
-            });
-        });
-        const tab = this.tabs.get(tabId)!;
-        await tab.implicitWait();
-        return tab;
-    }
-
-    sleep(ms: number) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-}
-
 type RunInClientResult<Return> = Pick<chrome.scripting.InjectionResult, Exclude<keyof chrome.scripting.InjectionResult, "result">> & { result: Return };
 
 export class Tab {
@@ -36,59 +9,7 @@ export class Tab {
     private title: string = "";
     private url: string = "";
 
-    constructor(private chromeTab: chrome.tabs.Tab, private context: BrowsingContent) {
-        this.chromeTab = chromeTab;
-
-        let solver: () => void = () => {};
-        chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-            if (tab.title) {
-                this.title = tab.title;
-            }
-
-            if (tab.url) {
-                this.url = tab.url;
-            }
-
-            if (tabId === this.chromeTab.id && changeInfo.status === "loading") {
-                this.implicitWaitPromise = this.implicitWaitPromise ?? 
-                    new Promise<void>((resolve) => {
-                        solver = resolve;
-                    });
-            }
-
-            if (tabId === this.chromeTab.id && changeInfo.status === "complete") {
-                this.injectContentScript(tabId)
-                    .then(() => {
-                        console.log("Smart browsing: content script injected");
-                        solver();
-                        this.implicitWaitPromise = null;
-                    });
-            }
-        });
-
-        this.implicitWaitPromise = this.injectContentScript(chromeTab.id!);
-    }
-
-    private runInClient<F extends ClientsideFunctions>(tabId: number, func: F, ...args: ClientsideFunctionArgs<F>) {
-        return chrome.scripting.executeScript({
-            target: { tabId },
-            func: ((f: string, ...args: any[]) => (window as any).smartBrowsing[f](...args)) as any,
-            args: [func, ...args],
-            world: "MAIN"
-        }) as Promise<(RunInClientResult<ClientsideFunctionReturn<F>>)[]>;
-    }
-
-    private injectContentScript(tabId: number) {
-        return new Promise<void>((resolve) => {
-            chrome.scripting.executeScript({
-                target: { tabId },
-                files: ["dist/contentScripts/bundle.js"],
-                world: "MAIN"
-            }, (result) => {
-                resolve();
-            });
-        });
-    }
+    constructor(private chromeTab: chrome.tabs.Tab) {}
 
     private setLastElementSelector(selector: string) {
         this.lastSelectedElement = {
@@ -147,10 +68,12 @@ export class Tab {
 
         // First, try to find the element from tabbable elements
         const tabbable = await this.getTabbableVisibleElements(intention);
+        console.log(tabbable);
         const elements = tabbable.map((el) => el.html);
         const selectors = tabbable.map((el) => el.selector);
         const found = await llm_selector.findInList(elements, context, description);
         if (found !== -1) {
+            console.log(selectors[found]);
             this.setLastElementSelector(selectors[found]);
             return;
         }
@@ -161,6 +84,7 @@ export class Tab {
             if (!res.cached) {
                 await res.save();
             }
+            console.log(res.xpath);
             this.setLastElementXPath(res.xpath);
             return;
         }

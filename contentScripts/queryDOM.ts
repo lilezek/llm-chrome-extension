@@ -1,11 +1,9 @@
 function GetCcssPathFromElement(el: Node | null) {
-    const escapeId = (id: string) => id.replace(/([:.\[\],])/g, '\\$1');
-
     const path: string[] = [];
     while (el && el.nodeType === Node.ELEMENT_NODE) {
         let selector = el.nodeName.toLowerCase();
         if (el instanceof Element && el.id) {
-            selector += '#' + escapeId(el.id);
+            selector += '#' + CSS.escape(el.id);
             // Break if the id is unique
             if (document.querySelectorAll(selector).length === 1) {
                 path.unshift(selector);
@@ -18,7 +16,7 @@ function GetCcssPathFromElement(el: Node | null) {
                 sibling = sibling.previousSibling;
                 nth++;
             } while (sibling && sibling.nodeType === Node.ELEMENT_NODE)
-            selector += ":nth-child("+nth+")";
+            selector += ":nth-child(" + nth + ")";
         }
         path.unshift(selector);
         el = el.parentNode;
@@ -26,14 +24,27 @@ function GetCcssPathFromElement(el: Node | null) {
     return path.join(" > ");
 }
 
+// From https://stackoverflow.com/a/12418814/2832398
+function inViewport(el: Element) {
+    const html = document.documentElement;
+    const rect = el.getBoundingClientRect();
+
+    return !!rect &&
+        rect.bottom >= 0 &&
+        rect.right >= 0 &&
+        rect.left <= html.clientWidth &&
+        rect.top <= html.clientHeight;
+}
+
 export function getFullDOM() {
     return document.documentElement.outerHTML;
 }
 
-export function getTabbableVisibleElements() {
-    return Array.from(document.querySelectorAll('a, button, input, select, textarea, [tabindex], [contenteditable]'))
+export function getTabbableVisibleElements(intention?: "click" | "type") {
+    const query = intention === "type" ? 'input, textarea, [contenteditable]' : 'a, button, input, select, textarea, [tabindex], [contenteditable]';
+    return Array.from(document.querySelectorAll(query))
         .filter((el) => {
-            if (!el.checkVisibility()) {
+            if (!el.checkVisibility() || !inViewport(el)) {
                 return false;
             }
 
@@ -63,7 +74,7 @@ export function getTabbableVisibleElements() {
 
             return true;
         }).map((el) => {
-            return {html: el.outerHTML, selector: GetCcssPathFromElement(el)};
+            return { html: el.outerHTML, selector: GetCcssPathFromElement(el) };
         });
 }
 

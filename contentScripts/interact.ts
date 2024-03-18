@@ -11,7 +11,7 @@ export function clickElement(selector: Selector) {
             bubbles: true,
             cancelable: true,
             view: window
-        });        
+        });
         el.dispatchEvent(mDown);
 
         const mUp = new MouseEvent('mouseup', {
@@ -23,13 +23,9 @@ export function clickElement(selector: Selector) {
     }
 }
 
-// TODO: replace this list with the same list as in Selenium.
+// TODO: Complete this list
 export const KeyCodes = {
-    Enter: 13,
-    ArrowLeft: 37,
-    ArrowUp: 38,
-    ArrowRight: 39,
-    ArrowDown: 40,
+    ENTER: 13,
 };
 
 // The inverse of the KeyCodes object
@@ -40,7 +36,7 @@ const Codes = Object.entries(KeyCodes).reduce((acc, [key, value]) => {
 
 
 /**
- * Simulates keypress, keydown, input and keyup events on an element
+ * Simulates keypress, keydown, beforeinput, input and keyup events on an element
  */
 function simulateKeyEvents(el: HTMLElement, keyCode: number, key?: string) {
     key = key ?? Codes[keyCode];
@@ -65,13 +61,25 @@ function simulateKeyEvents(el: HTMLElement, keyCode: number, key?: string) {
     });
     el.dispatchEvent(kPress);
 
-    const kInput = new InputEvent('input', {
+    const bInput = new InputEvent('beforeinput', {
         bubbles: true,
         cancelable: true,
         // view: window,
         data: key,
+        inputType: 'insertText',
+        isComposing: false,
     });
-    el.dispatchEvent(kInput);
+    const prevented = !el.dispatchEvent(bInput);
+
+    if (!prevented) {
+        const kInput = new InputEvent('input', {
+            bubbles: true,
+            cancelable: true,
+            // view: window,
+            data: key,
+        });
+        el.dispatchEvent(kInput);
+    }
 
     const kUp = new KeyboardEvent('keyup', {
         bubbles: true,
@@ -82,6 +90,8 @@ function simulateKeyEvents(el: HTMLElement, keyCode: number, key?: string) {
         key,
     });
     el.dispatchEvent(kUp);
+
+    return prevented;
 }
 
 /**
@@ -116,10 +126,11 @@ export async function sendKeysToElement(selector: Selector, ...keys: Array<strin
                 } 
                 // A contenteditable element
                 else if (el.isContentEditable) {
-                    el.innerHTML = el.innerHTML + key;
-                    // Simulate the last character
-                    simulateKeyEvents(el, key.charCodeAt(key.length-1), key[key.length-1]);
-                    await sleep(key.length * 100);
+                    const prevented = simulateKeyEvents(el, key.charCodeAt(key.length - 1), key);
+                    if (!prevented) {
+                        el.innerText = el.innerText + key;
+                    }
+                    await sleep(key.length * 10);
                 } else {
                     // Simulate each character
                     for (const char of key) {
