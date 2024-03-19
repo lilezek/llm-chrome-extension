@@ -9,9 +9,11 @@
     "start": "node dist/main.js",
     "build:extension": "webpack --config webpack.config.js",
     "build:contentScripts": "webpack --config contentScripts/webpack.config.js",
+    "build:sandbox": "webpack --config sandbox/webpack.config.js",
     "build": "npm run build:extension && npm run build:contentScripts",
     "watch:extension": "webpack --config webpack.config.js --watch",
     "watch:contentScripts": "webpack --config contentScripts/webpack.config.js --watch",
+    "watch:sandbox": "webpack --config sandbox/webpack.config.js --watch",
     "watch": "npm run watch:extension & npm run watch:contentScripts"
   },
   "author": "",
