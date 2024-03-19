@@ -19,8 +19,8 @@ document.getElementById('send')!.addEventListener('click', async () => {
         const codeString = await chatgpt.generateTasks(steps);
         chat.writeAssistantMessage(codeString);
         const task = Task.fromCode(codeString);
-        console.log(task);
-        task.run(await ctx.getCurrentTab());
+        const sandbox = new SandboxContext(await ctx.getCurrentTab());
+        task.run(sandbox);
         steps.length = 0;
     } else {
         steps.push(userInput);
