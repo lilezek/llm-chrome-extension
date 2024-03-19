@@ -4,6 +4,7 @@ import chat from "./chat/chat.js";
 import { sleep } from "../contentScripts/utils.js";
 import { ChatGPTChat } from "./AI/chatgpt.js";
 import { Task } from "./tasks/task.js";
+import { SandboxContext } from "./sandbox/context.js";
 
 const ctx = new BrowsingContent();
 const chatgpt = new ChatGPTChat(process.env.OPENAI_API_KEY!);
@@ -56,7 +57,7 @@ async function sendEmailGmail(to: string, subject: string, body: string) {
 document.getElementById('exec')!.addEventListener('click', async () => {
     // const tab = await ctx.getCurrentTab();
     // await tab.findElement('chat input bar or content editable div', "type");
-    // await tab.sendKeysToElement('de que va el mod', Key.ENTER);
+    // await tab.sendKeysToElement('message', Key.ENTER);
     // const task = Task.fromCode(`
     // async function clickComposeButton() {
     //     await tab.findElement('compose button');
@@ -67,4 +68,11 @@ document.getElementById('exec')!.addEventListener('click', async () => {
 
     // await tab.findElement('Pause button', "click");
     // await tab.clickElement();
+
+    const tab = await ctx.getCurrentTab();
+    const sandbox = new SandboxContext(tab);
+    await sandbox.eval(`async (tab) => {
+        await tab.findElement('Pause button', "click");
+        await tab.clickElement();
+    }`);
 });
