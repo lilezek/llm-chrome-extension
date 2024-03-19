@@ -9,7 +9,7 @@ class Tab {
     navigateTo(url: string): Promise<void>
     // Finds an element using an LLM.
     // For example, 'The contact John Doe', 'The search bar', 'The message input bar'...
-    findElement(whatToFind: string): Promise<void>
+    findElement(whatToFind: string, intention: 'click' | 'type'): Promise<void>
     sendKeysToElement(...keys: (string | number)[]): Promise<void>
     clickElement(): Promise<void>
     // Finds a regular expression in the page. 
