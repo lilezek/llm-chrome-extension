@@ -1,22 +1,23 @@
 import { ClientsideFunctionArgs, ClientsideFunctionReturn, ClientsideFunctions } from "../../contentScripts/main.js";
 import llm_selector from "../AI/llm_selector.js";
 import chat from "../chat/chat.js";
+import { Tab } from "./browser.js";
 
 export class BrowsingContent {
-    private tabs: Map<number, Tab> = new Map();
+    private tabs: Map<number, ChromeTab> = new Map();
 
     async getCurrentTab() {
         const tabId = await new Promise<number>((resolve) => {
             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                 if (!this.tabs.has(tabs[0].id!)) {
-                    this.tabs.set(tabs[0].id!, new Tab(tabs[0], this));
+                    this.tabs.set(tabs[0].id!, new ChromeTab(tabs[0], this));
 
                 }
                 resolve(tabs[0].id!);
             });
         });
         const tab = this.tabs.get(tabId)!;
-        await tab.implicitWait();
+        await tab.waitUntilReady();
         return tab;
     }
 
@@ -27,19 +28,16 @@ export class BrowsingContent {
 
 type RunInClientResult<Return> = Pick<chrome.scripting.InjectionResult, Exclude<keyof chrome.scripting.InjectionResult, "result">> & { result: Return };
 
-export class Tab {
-    private lastSelectedElement: {
-        selector?: string;
-        xpath?: string;
-    } = {};
+export class ChromeTab extends Tab {
     private implicitWaitPromise: Promise<void> | null = null;
     private title: string = "";
     private url: string = "";
 
     constructor(private chromeTab: chrome.tabs.Tab, private context: BrowsingContent) {
+        super();
         this.chromeTab = chromeTab;
 
-        let solver: () => void = () => {};
+        let solver: () => void = () => { };
         chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
             if (tab.title) {
                 this.title = tab.title;
@@ -50,14 +48,14 @@ export class Tab {
             }
 
             if (tabId === this.chromeTab.id && changeInfo.status === "loading") {
-                this.implicitWaitPromise = this.implicitWaitPromise ?? 
+                this.implicitWaitPromise = this.implicitWaitPromise ??
                     new Promise<void>((resolve) => {
                         solver = resolve;
                     });
             }
 
             if (tabId === this.chromeTab.id && changeInfo.status === "complete") {
-                this.injectContentScript(tabId)
+                this.injectContentScript()
                     .then(() => {
                         console.log("Smart browsing: content script injected");
                         solver();
@@ -66,22 +64,37 @@ export class Tab {
             }
         });
 
-        this.implicitWaitPromise = this.injectContentScript(chromeTab.id!);
+        this.implicitWaitPromise = this.injectContentScript();
     }
 
-    private runInClient<F extends ClientsideFunctions>(tabId: number, func: F, ...args: ClientsideFunctionArgs<F>) {
+    private async getSource() {
+        await this.waitUntilReady();
+        return this.runInClient("getFullDOM")
+            .then((a) => a[0].result);
+    }
+
+    /**
+    * @returns A list of strings (html) representing the tabbable elements in the page.
+    */
+    private async getTabbableVisibleElements(intention?: "click" | "type") {
+        await this.waitUntilReady();
+        return this.runInClient("getTabbableVisibleElements", intention)
+            .then((a) => a[0].result);
+    }
+
+    protected override runInClient<F extends ClientsideFunctions>(func: F, ...args: ClientsideFunctionArgs<F>) {
         return chrome.scripting.executeScript({
-            target: { tabId },
+            target: { tabId: this.chromeTab.id! },
             func: ((f: string, ...args: any[]) => (window as any).smartBrowsing[f](...args)) as any,
             args: [func, ...args],
             world: "MAIN"
         }) as Promise<(RunInClientResult<ClientsideFunctionReturn<F>>)[]>;
     }
 
-    private injectContentScript(tabId: number) {
+    protected override injectContentScript() {
         return new Promise<void>((resolve) => {
             chrome.scripting.executeScript({
-                target: { tabId },
+                target: { tabId: this.chromeTab.id! },
                 files: ["dist/contentScripts/bundle.js"],
                 world: "MAIN"
             }, (result) => {
@@ -89,59 +102,26 @@ export class Tab {
             });
         });
     }
-
-    private setLastElementSelector(selector: string) {
-        this.lastSelectedElement = {
-            selector
-        };
-    }
-
-    private setLastElementXPath(xpath: string) {
-        this.lastSelectedElement = {
-            xpath
-        };
-    }
-
-    implicitWait() {
+    
+    override async waitUntilReady() {
         if (this.implicitWaitPromise) {
             return this.implicitWaitPromise;
         }
     }
 
-    async navigateTo(url: string) {
+    protected async navigateToImpl(url: string) {
         await chrome.tabs.update(
             this.chromeTab.id!,
             {
                 url
             });
     }
-
-    private async getSource() {
-        await this.implicitWait();
-        return this.runInClient(this.chromeTab.id!, "getFullDOM")
-            .then((a) => a[0].result);
+    
+    getImplementation() {
+        return this.chromeTab;
     }
 
-    /**
-     * @returns A list of strings (html) representing the tabbable elements in the page.
-     */
-    private async getTabbableVisibleElements(intention?: "click" | "type") {
-        await this.implicitWait();
-        return this.runInClient(this.chromeTab.id!, "getTabbableVisibleElements", intention)
-            .then((a) => a[0].result);
-    }
-
-    async clickElement() {
-        await this.implicitWait();
-        this.runInClient(this.chromeTab.id!, "clickElement", this.lastSelectedElement);
-    }
-
-    async sendKeysToElement(...keys: Array<string | number>) {
-        await this.implicitWait();
-        this.runInClient(this.chromeTab.id!, "sendKeysToElement", this.lastSelectedElement, ...keys);
-    }
-
-    async findElement(description: string, intention: "click" | "type") {
+    async findElementImpl(description: string, intention: "click" | "type") {
         chat.writeAssistantMessage(`Finding element: ${description}`);
         const context = `${this.title} - ${this.url}`;
 
