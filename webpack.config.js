@@ -7,6 +7,7 @@ dotenv.config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const module = {
+    mode: 'development',
     entry: './extension/main.ts',
     module: {
         rules: [
@@ -35,7 +36,8 @@ const module = {
         new webpack.DefinePlugin({
             'process.env': {
                 'OPENAI_API_KEY': JSON.stringify(process.env.OPENAI_API_KEY),
-            }
+            },
+            'DEBUG': 'true',
         }),
         new webpack.ProvidePlugin({
             Buffer: ['buffer', 'Buffer'],

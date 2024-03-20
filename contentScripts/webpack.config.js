@@ -1,9 +1,11 @@
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import webpack from 'webpack';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const module = {
+    mode: 'development',
     entry: './contentScripts/main.ts',
     module: {
         rules: [
@@ -29,6 +31,11 @@ const module = {
         filename: 'bundle.js',
         path: path.resolve(__dirname, '../dist/contentScripts'),
     },
+    plugins: [
+        new webpack.DefinePlugin({
+            'DEBUG': 'true',
+        }),
+    ]
 };
 
 export default module;
