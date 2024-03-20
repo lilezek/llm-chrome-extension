@@ -36,6 +36,8 @@ export class ChromeTab extends Tab {
     constructor(private chromeTab: chrome.tabs.Tab, private context: BrowsingContent) {
         super();
         this.chromeTab = chromeTab;
+        this.title = chromeTab.title ?? "";
+        this.url = chromeTab.url ?? "";
 
         let solver: () => void = () => { };
         chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
