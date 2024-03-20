@@ -1,5 +1,6 @@
 import { ChatGPTAPI, ChatGPTError } from 'chatgpt';
 import systemPromptGenerateTaskJson from './system_prompt_generate_task_en.json' with { type: "json" };
+import { LocalStorage } from '../storage/localstorage.js';
 
 const systemPromptGenerateTask = systemPromptGenerateTaskJson[0];
 
@@ -47,6 +48,17 @@ export class ChatGPTChat {
 
         if (!response) {
             throw new Error(`Failed to get a response from the API after ${retries} attempts`);
+        }
+
+        if (DEBUG) {
+            const debugInfo = {
+                system,
+                prompt,
+                response: response.text,
+            };
+
+            // chat-debug-datetime
+            new LocalStorage(`chatgpt-debug-${new Date().toISOString()}`).setJSON(debugInfo);
         }
 
         return response.text;
