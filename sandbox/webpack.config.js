@@ -35,7 +35,7 @@ const module = {
         new webpack.DefinePlugin({
             'DEBUG': 'true',
         }),
-    ]
+    ],
 };
 
 export default module;

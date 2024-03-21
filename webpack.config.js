@@ -42,7 +42,8 @@ const module = {
         new webpack.ProvidePlugin({
             Buffer: ['buffer', 'Buffer'],
         })
-    ]
+    ],
+    devtool: 'cheap-module-source-map'
 };
 
 export default module;
