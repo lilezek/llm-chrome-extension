@@ -137,6 +137,9 @@ export class ChromeTab extends Tab {
         const selectors = tabbable.map((el) => el.selector);
         const found = await llm_selector.findInList(elements, context, description);
         if (found !== -1) {
+            if (DEBUG) {
+                console.log(`Element found from tabbable elements: ${selectors[found]}`);
+            }
             this.setLastElementSelector(selectors[found]);
             return;
         }
@@ -146,6 +149,9 @@ export class ChromeTab extends Tab {
         for await (const res of llm_selector.findXPath(source, context, description)) {
             if (!res.cached) {
                 await res.save();
+            }
+            if (DEBUG) {
+                console.log(`Element found from whole page: ${res.xpath}`);
             }
             this.setLastElementXPath(res.xpath);
             return;
