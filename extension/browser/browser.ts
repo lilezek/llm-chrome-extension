@@ -26,6 +26,12 @@ export abstract class Tab {
         };
     }
 
+    async sleep(ms: number) {
+        return new Promise<void>((resolve) => {
+            setTimeout(resolve, ms);
+        });
+    }
+
     async clickElement() {
         await this.waitUntilReady();
         this.runInClient("clickElement", this.lastSelectedElement);
