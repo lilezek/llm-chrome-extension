@@ -1,9 +1,8 @@
 import { BrowsingContent } from "./browser/chrome.js";
-import { KeyCodes as Key} from "../contentScripts/interact.js";
 import chat from "./chat/chat.js";
-import { sleep } from "../contentScripts/utils.js";
 import { ChatGPTChat } from "./AI/chatgpt.js";
 import { Task } from "./tasks/task.js";
+import "./tasks/built-in/barrel.js";
 import { SandboxContext } from "./sandbox/context.js";
 
 const ctx = new BrowsingContent();
@@ -20,39 +19,15 @@ document.getElementById('send')!.addEventListener('click', async () => {
         chat.writeAssistantMessage(codeString);
         const task = Task.fromCode(codeString);
         const sandbox = new SandboxContext(await ctx.getCurrentTab());
-        task.run(sandbox);
+        await task.run(sandbox);
         steps.length = 0;
+        task.save();
     } else {
         steps.push(userInput);
         chat.writeUserMessage(steps[steps.length - 1]);
     }
     chat.clearInput();
 });
-
-async function sendEmailGmail(to: string, subject: string, body: string) {
-    const tab = await ctx.getCurrentTab();
-    await tab.navigateTo('https://mail.google.com')
-    await sleep(1000);
-
-    await tab.findElement('Compose', "click")
-    await tab.clickElement()
-    await sleep(1000);
-   
-    await tab.findElement('To input bar', "type")
-    await tab.sendKeysToElement(to)
-    await sleep(1000);
-   
-    await tab.findElement('Subject', "type")
-    await tab.sendKeysToElement(subject)
-    await sleep(1000);
-    
-    await tab.findElement('Message body', "type")
-    await tab.sendKeysToElement(body)
-    await sleep(1000);
-
-    await tab.findElement('Send', "click")
-    await tab.clickElement()
-}
 
 document.getElementById('exec')!.addEventListener('click', async () => {
     // const tab = await ctx.getCurrentTab();
