@@ -12,7 +12,8 @@ export abstract class Tab {
     protected abstract runInClient<F extends ClientsideFunctions>(func: F, ...args: ClientsideFunctionArgs<F>): Promise<(RunInClientResult<ClientsideFunctionReturn<F>>)[]>;
     abstract waitUntilReady(): Promise<void>;
     protected abstract navigateToImpl(url: string): Promise<void>;
-    protected abstract findElementImpl(description: string, intention: "click" | "type"): Promise<void>;
+    protected abstract findElementImpl(description: string, intention: "click" | "type" | "select"): Promise<void>;
+    protected abstract findInTextImp(description: string): Promise<string>;
 
     protected setLastElementSelector(selector: string) {
         this.lastSelectedElement = {
@@ -46,7 +47,11 @@ export abstract class Tab {
        return this.navigateToImpl(url);
     }
 
-    async findElement(description: string, intention: "click" | "type") {
+    async findElement(description: string, intention: "click" | "type" | "select") {
         return this.findElementImpl(description, intention);
+    }
+
+    async findInText(description: string) {
+        return this.findInTextImp(description);
     }
 }

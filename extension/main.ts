@@ -1,12 +1,12 @@
-import { BrowsingContent } from "./browser/chrome.js";
+import { ChromeBrowsingContext } from "./browser/chrome.js";
 import chat from "./chat/chat.js";
 import { ChatGPTChat } from "./AI/chatgpt.js";
 import { Task } from "./tasks/task.js";
 import "./tasks/built-in/barrel.js";
 import { SandboxContext } from "./sandbox/context.js";
 
-const ctx = new BrowsingContent();
 const chatgpt = new ChatGPTChat(process.env.OPENAI_API_KEY!);
+const ctx = new ChromeBrowsingContext(chatgpt);
 
 chat.writeAssistantMessage('Write your task, one step at a time. Write "done" when you are finished.');
 const steps: string[] = [];

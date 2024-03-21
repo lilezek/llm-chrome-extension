@@ -1,16 +1,19 @@
 import { ClientsideFunctionArgs, ClientsideFunctionReturn, ClientsideFunctions } from "../../contentScripts/main.js";
+import { ChatGPTChat } from "../AI/chatgpt.js";
 import llm_selector from "../AI/llm_selector.js";
 import chat from "../chat/chat.js";
 import { Tab } from "./browser.js";
 
-export class BrowsingContent {
+export class ChromeBrowsingContext {
     private tabs: Map<number, ChromeTab> = new Map();
+
+    constructor(private chatgpt: ChatGPTChat) { }
 
     async getCurrentTab() {
         const tabId = await new Promise<number>((resolve) => {
             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                 if (!this.tabs.has(tabs[0].id!)) {
-                    this.tabs.set(tabs[0].id!, new ChromeTab(tabs[0], this));
+                    this.tabs.set(tabs[0].id!, new ChromeTab(tabs[0], this.chatgpt));
 
                 }
                 resolve(tabs[0].id!);
@@ -19,10 +22,6 @@ export class BrowsingContent {
         const tab = this.tabs.get(tabId)!;
         await tab.waitUntilReady();
         return tab;
-    }
-
-    sleep(ms: number) {
-        return new Promise(resolve => setTimeout(resolve, ms));
     }
 }
 
@@ -33,7 +32,7 @@ export class ChromeTab extends Tab {
     private title: string = "";
     private url: string = "";
 
-    constructor(private chromeTab: chrome.tabs.Tab, private context: BrowsingContent) {
+    constructor(private chromeTab: chrome.tabs.Tab, private chatgpt: ChatGPTChat) {
         super();
         this.chromeTab = chromeTab;
         this.title = chromeTab.title ?? "";
@@ -78,7 +77,7 @@ export class ChromeTab extends Tab {
     /**
     * @returns A list of strings (html) representing the tabbable elements in the page.
     */
-    private async getTabbableVisibleElements(intention?: "click" | "type") {
+    private async getTabbableVisibleElements(intention?: "click" | "type" | "select") {
         await this.waitUntilReady();
         return this.runInClient("getTabbableVisibleElements", intention)
             .then((a) => a[0].result);
@@ -104,7 +103,12 @@ export class ChromeTab extends Tab {
             });
         });
     }
-    
+
+    protected override async findInTextImp(description: string): Promise<string> {
+        const textContentResult = await this.runInClient("getFullText");
+        return this.chatgpt.findInText(description, textContentResult[0].result);
+    }
+
     override async waitUntilReady() {
         if (this.implicitWaitPromise) {
             return this.implicitWaitPromise;
@@ -118,12 +122,12 @@ export class ChromeTab extends Tab {
                 url
             });
     }
-    
+
     getImplementation() {
         return this.chromeTab;
     }
 
-    async findElementImpl(description: string, intention: "click" | "type") {
+    async findElementImpl(description: string, intention: "click" | "type" | "select") {
         chat.writeAssistantMessage(`Finding element: ${description}`);
         const context = `${this.title} - ${this.url}`;
 

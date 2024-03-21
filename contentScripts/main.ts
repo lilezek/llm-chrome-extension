@@ -1,11 +1,12 @@
 import { sendKeysToElement, clickElement } from "./interact.js";
-import { getFullDOM, getTabbableVisibleElements } from "./queryDOM.js";
+import { getFullDOM, getTabbableVisibleElements, getFullText } from "./queryDOM.js";
 
 const smartBrowsing = {
     getFullDOM,
     getTabbableVisibleElements,
     sendKeysToElement,
     clickElement,
+    getFullText,
 } as const;
 
 (window as any).smartBrowsing = smartBrowsing;

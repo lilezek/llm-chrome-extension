@@ -40,9 +40,36 @@ export function getFullDOM() {
     return document.documentElement.outerHTML;
 }
 
-export function getTabbableVisibleElements(intention?: "click" | "type") {
-    const query = intention === "type" ? 'input, textarea, [contenteditable]' : 'a, button, input, select, textarea, [tabindex], [contenteditable]';
-    return Array.from(document.querySelectorAll(query))
+/**
+ * Recursively iterates over all elements, discarding not visible elements, style and script tags.
+ */
+export function getFullText(root = document.documentElement) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+            if (node.parentElement) {
+                if (!node.parentElement.checkVisibility()) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                if (node.parentElement instanceof HTMLStyleElement || node.parentElement instanceof HTMLScriptElement) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                // Inside viewport
+                if (!inViewport(node.parentElement)) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+            }
+            return NodeFilter.FILTER_ACCEPT;
+        }
+    });
+
+    const texts: string[] = [];
+    while (walker.nextNode()) {
+        if (walker.currentNode.nodeValue && walker.currentNode.nodeValue.trim()) {
+            texts.push(walker.currentNode.nodeValue.trim());
+        }
+    }
+    return texts.join("\n");
+}
         .filter((el) => {
             if (!el.checkVisibility() || !inViewport(el)) {
                 return false;

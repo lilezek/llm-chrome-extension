@@ -15,8 +15,10 @@ class Tab {
     // Finds a regular expression in the page. 
     // Useful for finding patterns like ip addresses, phone numbers, email addresses and such.
     readRegex(reContent: RegExp): Promise<string>
+    // Useful for extracting text, for example, from emails, articles, youtube/social media comments...
+    findInText(description: string): Promise<string>
 }
 // Keys from Selenium Webdriver. Useful for sending Key.ENTER.
 const Key: IKey
-const tab: Tab
+const tab: TabContext
 ```
