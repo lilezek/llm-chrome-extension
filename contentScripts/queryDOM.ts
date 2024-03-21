@@ -72,9 +72,28 @@ export function getFullText(root = document.documentElement) {
     }
     return texts.join("\n");
 }
+
+export function getTabbableVisibleElements(intention?: "click" | "type" | "select") {
+    let query = "";
+    switch (intention) {
+        case "click":
+            query = 'a, button, input, select, select > option textarea, [tabindex], [contenteditable]';
+            break;
+        case "type":
+            query = 'input, textarea, [contenteditable]';
+            break;
+        case "select":
+            query = 'select, select > option';
+            break;
+    }
+
+    return Array.from(deepQuerySelectorAll(document, query))
         .filter((el) => {
             if (!el.checkVisibility() || !inViewport(el)) {
-                return false;
+                // Not visible, skip, but only if it is not an option (options are hidden by default)
+                if (!(el instanceof HTMLOptionElement)) {
+                    return false;
+                }
             }
 
             if (el instanceof HTMLAnchorElement && !el.href) {
@@ -98,7 +117,10 @@ export function getFullText(root = document.documentElement) {
             }
 
             if (el instanceof HTMLElement && el.tabIndex === -1) {
-                return false;
+                // Option elements are not tabbable by default
+                if (!(el instanceof HTMLOptionElement)) {
+                    return false;
+                }
             }
 
             return true;

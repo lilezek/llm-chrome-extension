@@ -1,9 +1,17 @@
 import { SelectOneElement, Selector, sleep } from "./utils.js";
 
+export function selectOption(select: HTMLSelectElement, option: HTMLOptionElement) {
+    select.value = option.value;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+}
 
 export function clickElement(selector: Selector) {
     const el = SelectOneElement(selector);
     if (el) {
+        if (el instanceof HTMLOptionElement) {
+            return selectOption(el.parentElement as HTMLSelectElement, el);
+        }
+
         // Emit click, mousedown and mouseup events
         el.click();
         
