@@ -11,11 +11,13 @@ function GetCcssPathFromElement(el: Node | null) {
             }
         } else {
             let sibling: Node | null = el;
-            let nth = 0;
+            let nth = 1;
             do {
                 sibling = sibling.previousSibling;
-                nth++;
-            } while (sibling && sibling.nodeType === Node.ELEMENT_NODE)
+                if (sibling && sibling.nodeType === Node.ELEMENT_NODE) {
+                    nth++;
+                }
+            } while (sibling)
             selector += ":nth-child(" + nth + ")";
         }
         path.unshift(selector);
