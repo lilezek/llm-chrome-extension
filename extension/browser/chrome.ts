@@ -2,6 +2,8 @@ import { ClientsideFunctionArgs, ClientsideFunctionReturn, ClientsideFunctions }
 import { ChatGPTChat } from "../AI/chatgpt.js";
 import llm_selector from "../AI/llm_selector.js";
 import chat from "../chat/chat.js";
+import { debug } from "../debug.js";
+import { Semaphore } from "../semaphore.js";
 import { Tab } from "./browser.js";
 
 export class ChromeBrowsingContext {
@@ -14,7 +16,6 @@ export class ChromeBrowsingContext {
             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                 if (!this.tabs.has(tabs[0].id!)) {
                     this.tabs.set(tabs[0].id!, new ChromeTab(tabs[0], this.chatgpt));
-
                 }
                 resolve(tabs[0].id!);
             });
@@ -28,7 +29,7 @@ export class ChromeBrowsingContext {
 type RunInClientResult<Return> = Pick<chrome.scripting.InjectionResult, Exclude<keyof chrome.scripting.InjectionResult, "result">> & { result: Return };
 
 export class ChromeTab extends Tab {
-    private implicitWaitPromise: Promise<void> | null = null;
+    private stableDomSemaphore = new Semaphore("green");
     private title: string = "";
     private url: string = "";
 
@@ -38,8 +39,8 @@ export class ChromeTab extends Tab {
         this.title = chromeTab.title ?? "";
         this.url = chromeTab.url ?? "";
 
-        let solver: () => void = () => { };
-        chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+        chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+            debug.log(changeInfo);
             if (tab.title) {
                 this.title = tab.title;
             }
@@ -49,23 +50,9 @@ export class ChromeTab extends Tab {
             }
 
             if (tabId === this.chromeTab.id && changeInfo.status === "loading") {
-                this.implicitWaitPromise = this.implicitWaitPromise ??
-                    new Promise<void>((resolve) => {
-                        solver = resolve;
-                    });
-            }
-
-            if (tabId === this.chromeTab.id && changeInfo.status === "complete") {
-                this.injectContentScript()
-                    .then(() => {
-                        console.log("Smart browsing: content script injected");
-                        solver();
-                        this.implicitWaitPromise = null;
-                    });
+                this.runInClient("setDOMDirty");
             }
         });
-
-        this.implicitWaitPromise = this.injectContentScript();
     }
 
     private async getSource() {
@@ -84,24 +71,14 @@ export class ChromeTab extends Tab {
     }
 
     protected override runInClient<F extends ClientsideFunctions>(func: F, ...args: ClientsideFunctionArgs<F>) {
-        return chrome.scripting.executeScript({
+        const result = chrome.scripting.executeScript({
             target: { tabId: this.chromeTab.id! },
             func: ((f: string, ...args: any[]) => (window as any).smartBrowsing[f](...args)) as any,
             args: [func, ...args],
             world: "MAIN"
         }) as Promise<(RunInClientResult<ClientsideFunctionReturn<F>>)[]>;
-    }
 
-    protected override injectContentScript() {
-        return new Promise<void>((resolve) => {
-            chrome.scripting.executeScript({
-                target: { tabId: this.chromeTab.id! },
-                files: ["dist/contentScripts/bundle.js"],
-                world: "MAIN"
-            }, (result) => {
-                resolve();
-            });
-        });
+        return result;
     }
 
     protected override async findInTextImp(description: string): Promise<string> {
@@ -110,9 +87,24 @@ export class ChromeTab extends Tab {
     }
 
     override async waitUntilReady() {
-        if (this.implicitWaitPromise) {
-            return this.implicitWaitPromise;
+        debug.log("waiting");
+        if (this.stableDomSemaphore.status === "red") {
+            debug.log("already waiting");
+            return this.stableDomSemaphore.green();
         }
+        this.stableDomSemaphore.signal("red");
+        await this.runInClient("setDOMDirty");
+
+        const interval = setInterval(async () => {
+            const isStable = (await this.runInClient("isDOMStable"))[0].result;
+            if (isStable) {
+                this.stableDomSemaphore.signal("green");
+                clearInterval(interval);
+            }
+        }, 500);
+
+        await this.stableDomSemaphore.green();
+        debug.log("ready");
     }
 
     protected async navigateToImpl(url: string) {
@@ -138,7 +130,7 @@ export class ChromeTab extends Tab {
         const found = await llm_selector.findInList(elements, context, description);
         if (found !== -1) {
             if (DEBUG) {
-                console.log(`Element found from tabbable elements: ${selectors[found]}`);
+                debug.log(`Element found from tabbable elements: ${selectors[found]}`);
             }
             this.setLastElementSelector(selectors[found]);
             return;
@@ -151,7 +143,7 @@ export class ChromeTab extends Tab {
                 await res.save();
             }
             if (DEBUG) {
-                console.log(`Element found from whole page: ${res.xpath}`);
+                debug.log(`Element found from whole page: ${res.xpath}`);
             }
             this.setLastElementXPath(res.xpath);
             return;

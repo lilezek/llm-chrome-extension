@@ -8,7 +8,6 @@ export abstract class Tab {
         xpath?: string;
     } = {};
 
-    protected abstract injectContentScript(): Promise<void>;
     protected abstract runInClient<F extends ClientsideFunctions>(func: F, ...args: ClientsideFunctionArgs<F>): Promise<(RunInClientResult<ClientsideFunctionReturn<F>>)[]>;
     abstract waitUntilReady(): Promise<void>;
     protected abstract navigateToImpl(url: string): Promise<void>;
@@ -35,23 +34,26 @@ export abstract class Tab {
 
     async clickElement() {
         await this.waitUntilReady();
-        this.runInClient("clickElement", this.lastSelectedElement);
+        await this.runInClient("clickElement", this.lastSelectedElement);
     }
 
     async sendKeysToElement(...keys: Array<string | number>) {
         await this.waitUntilReady();
-        this.runInClient("sendKeysToElement", this.lastSelectedElement, ...keys);
+        await this.runInClient("sendKeysToElement", this.lastSelectedElement, ...keys);
     }
 
     async navigateTo(url: string) {
-       return this.navigateToImpl(url);
+       const p = this.navigateToImpl(url);
+       return p;
     }
 
     async findElement(description: string, intention: "click" | "type" | "select") {
+        await this.waitUntilReady();
         return this.findElementImpl(description, intention);
     }
 
     async findInText(description: string) {
+        await this.waitUntilReady();
         return this.findInTextImp(description);
     }
 }
