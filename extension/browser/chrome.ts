@@ -4,7 +4,7 @@ import llm_selector from "../AI/llm_selector.js";
 import chat from "../chat/chat.js";
 import { debug } from "../debug.js";
 import { Semaphore } from "../semaphore.js";
-import { Tab } from "./browser.js";
+import { Element, Tab } from "./browser.js";
 
 export class ChromeBrowsingContext {
     private tabs: Map<number, ChromeTab> = new Map();
@@ -120,7 +120,7 @@ export class ChromeTab extends Tab {
         return this.chromeTab;
     }
 
-    async findElementImpl(description: string, intention: "click" | "type" | "select") {
+    async findElementImpl(description: string, intention: "click" | "type" | "select"): Promise<Element> {
         chat.writeAssistantMessage(`Finding element: ${description}`);
         const context = `${this.title} - ${this.url}`;
 
@@ -133,8 +133,9 @@ export class ChromeTab extends Tab {
             if (DEBUG) {
                 debug.log(`Element found from tabbable elements: ${selectors[found]}`);
             }
-            this.setLastElementSelector(selectors[found]);
-            return;
+            return {
+               selector: selectors[found]
+            };
         }
 
         // If not found, try to find the element from the whole page
@@ -146,8 +147,9 @@ export class ChromeTab extends Tab {
             if (DEBUG) {
                 debug.log(`Element found from whole page: ${res.xpath}`);
             }
-            this.setLastElementXPath(res.xpath);
-            return;
+            return {
+                xpath: res.xpath
+            };
         }
 
         chat.writeAssistantMessage(`Element not found: ${description}`);

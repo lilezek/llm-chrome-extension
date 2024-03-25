@@ -2,29 +2,17 @@ import { ClientsideFunctionArgs, ClientsideFunctionReturn, ClientsideFunctions }
 
 type RunInClientResult<Return> = Pick<chrome.scripting.InjectionResult, Exclude<keyof chrome.scripting.InjectionResult, "result">> & { result: Return };
 
-export abstract class Tab {
-    private lastSelectedElement: {
-        selector?: string;
-        xpath?: string;
-    } = {};
+export type Element = {
+    selector?: string;
+    xpath?: string;
+};
 
+export abstract class Tab {
     protected abstract runInClient<F extends ClientsideFunctions>(func: F, ...args: ClientsideFunctionArgs<F>): Promise<(RunInClientResult<ClientsideFunctionReturn<F>>)[]>;
     abstract waitUntilReady(): Promise<void>;
     protected abstract navigateToImpl(url: string): Promise<void>;
-    protected abstract findElementImpl(description: string, intention: "click" | "type" | "select"): Promise<void>;
+    protected abstract findElementImpl(description: string, intention: "click" | "type" | "select"): Promise<Element>;
     protected abstract findInTextImp(description: string): Promise<string>;
-
-    protected setLastElementSelector(selector: string) {
-        this.lastSelectedElement = {
-            selector
-        };
-    }
-
-    protected setLastElementXPath(xpath: string) {
-        this.lastSelectedElement = {
-            xpath
-        };
-    }
 
     async sleep(ms: number) {
         return new Promise<void>((resolve) => {
@@ -32,14 +20,14 @@ export abstract class Tab {
         });
     }
 
-    async clickElement() {
+    async clickElement(el: Element) {
         await this.waitUntilReady();
-        await this.runInClient("clickElement", this.lastSelectedElement);
+        await this.runInClient("clickElement", el);
     }
 
-    async sendKeysToElement(...keys: Array<string | number>) {
+    async sendKeysToElement(el: Element, ...keys: Array<string | number>) {
         await this.waitUntilReady();
-        await this.runInClient("sendKeysToElement", this.lastSelectedElement, ...keys);
+        await this.runInClient("sendKeysToElement", el, ...keys);
     }
 
     async navigateTo(url: string) {
