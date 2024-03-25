@@ -1,5 +1,7 @@
+import { debug } from "./debug.js";
 import { sendKeysToElement, clickElement } from "./interact.js";
 import { getFullDOM, getTabbableVisibleElements, getFullText } from "./queryDOM.js";
+import { isDOMStable, setDOMDirty } from "./stableDOM.js";
 
 const smartBrowsing = {
     getFullDOM,
@@ -7,6 +9,8 @@ const smartBrowsing = {
     sendKeysToElement,
     clickElement,
     getFullText,
+    isDOMStable,
+    setDOMDirty,
 } as const;
 
 (window as any).smartBrowsing = smartBrowsing;
@@ -19,4 +23,4 @@ export type ClientsideFunctionArgs<F extends ClientsideFunctions> = Parameters<t
 export type ClientsideFunctionReturn<F extends ClientsideFunctions> = ReturnType<typeof smartBrowsing[F]>;
 export default smartBrowsing;
 
-console.log("Smart Browsing Content Script Loaded!", smartBrowsing);
+debug.log("Smart Browsing Content Script Loaded!", smartBrowsing);
