@@ -35,7 +35,8 @@ const module = {
         new webpack.DefinePlugin({
             'DEBUG': 'true',
         }),
-    ]
+    ],
+    devtool: 'cheap-module-source-map'
 };
 
 export default module;
