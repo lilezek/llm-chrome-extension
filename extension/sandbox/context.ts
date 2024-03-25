@@ -27,7 +27,8 @@ export class SandboxContext {
             const { type, method, args } = data;
             
             if (type === "tab") {
-                const result = await (this.tab as any)[method](...args);
+                // @ts-expect-error I'm calling a method on the tab object and there is no suitable type for this
+                const result = await this.tab[method](...args);
                 // Send the result back to the iframe
                 this.iframe.contentWindow!.postMessage({ type: "tab_response", result }, '*');
             }
@@ -38,7 +39,7 @@ export class SandboxContext {
         document.body.removeChild(this.iframe);
     }
 
-    async eval(code: string, ...args: any[]) {
+    async eval(code: string, ...args: unknown[]) {
         await this.readyPromise;
         // Send a message to the iframe contining the code to be executed
         this.iframe.contentWindow!.postMessage({ type: "eval", code, args }, '*');

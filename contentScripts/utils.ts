@@ -16,14 +16,12 @@ export function SelectOneElement(selector: Selector) {
         if (!result) {
             return null;
         }
-        while (true) {
-            const node = result.iterateNext();
-            if (!node) {
-                return null;
-            }
+        let node = result.iterateNext();
+        while (node !== null) {
             if (node instanceof HTMLElement) {
                 return node;
             }
+            node = result.iterateNext();
         }
     } else if (selector.selector) {
         return document.querySelector(selector.selector) as HTMLElement | null;

@@ -1,5 +1,5 @@
 export const debug = {
-    log(...args: any[]) {
+    log(...args: unknown[]) {
         if (DEBUG) {
             console.log(...args);
         }

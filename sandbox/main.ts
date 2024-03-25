@@ -1,15 +1,23 @@
 import { Tab } from "./runInExtension.js";
 import { KeyCodes } from "../contentScripts/interact.js";
 
-// Expose the KeyCodes object to the window
-// This is important given that the generated code will use keys such as "Key.ENTER" from the global scope.
-(window as any).Key = KeyCodes;
+
+declare global {
+    // Global variables exposed to the sandbox.
+    interface Window {
+        Key: typeof KeyCodes;
+    }
+}
+
+window.Key = KeyCodes;
+
+type EvalFunction = (tab: typeof Tab, ...args: unknown[]) => void;
 
 window.addEventListener('message', (event) => {
     const { data } = event;
     const { type, code, args } = data;
     if (type == "eval") {
-        const f = eval(code) as Function;
+        const f = eval(code) as EvalFunction;
         f.call(window, Tab, ...args);
     }
 });

@@ -26,7 +26,7 @@ export class Semaphore {
         }
     }
 
-    redUntil(p: Promise<any>) {
+    redUntil(p: Promise<never>) {
         this._status = "red";
         this.promise = p;
         p.then(() => {

@@ -17,5 +17,5 @@ export const SYNCHRONOUS = false as OnMessageReturnType;
 export const ASYNCHRONOUS = true as OnMessageReturnType;
 
 export const OnMessage = chrome.runtime.onMessage as chrome.events.Event<
-    (msg: Request, sender: chrome.runtime.MessageSender, sendResponse: (response: Response<any>) => void) => OnMessageReturnType | undefined
+    (msg: Request, sender: chrome.runtime.MessageSender, sendResponse: (response: Response<unknown>) => void) => OnMessageReturnType | undefined
 >;

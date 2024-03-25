@@ -1,6 +1,6 @@
 import { Tab as ExtensionTab } from "../extension/browser/browser.js";
 
-let responsePromiseSolver: (value: any) => void;
+let responsePromiseSolver: (value: unknown) => void;
 
 window.addEventListener('message', async (event) => {
     const { data } = event;
@@ -11,7 +11,7 @@ window.addEventListener('message', async (event) => {
     }
 });
 
-function callExtensionTab(method: string, ...args: any[]) {
+function callExtensionTab(method: string, ...args: unknown[]) {
     const responsePromise = new Promise((resolve) => {
         responsePromiseSolver = resolve;
     });
@@ -29,7 +29,9 @@ for (const method of Object.getOwnPropertyNames(ExtensionTab.prototype)) {
         continue;
     }
 
-    (Tab as any)[method] = async function (...args: any[]) {
+    // @ts-expect-error I'm accessing Tab with method which is part of the prototype of ExtensionTab
+    Tab[method] = 
+    async function (...args: unknown[]) {
         return callExtensionTab(method, ...args);
     };
 }

@@ -73,7 +73,8 @@ export class ChromeTab extends Tab {
     protected override runInClient<F extends ClientsideFunctions>(func: F, ...args: ClientsideFunctionArgs<F>) {
         const result = chrome.scripting.executeScript({
             target: { tabId: this.chromeTab.id! },
-            func: ((f: string, ...args: any[]) => (window as any).smartBrowsing[f](...args)) as any,
+            // @ts-expect-error Can't type window.smartBrowsing properly given F even if it is the proper string
+            func: ((f: string, ...args: unknown[]) => window.smartBrowsing[f](...args)) as () => void,
             args: [func, ...args],
             world: "MAIN"
         }) as Promise<(RunInClientResult<ClientsideFunctionReturn<F>>)[]>;

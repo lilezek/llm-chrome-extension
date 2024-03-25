@@ -54,7 +54,7 @@ export class Task {
             throw new Error('Invalid function header');
         }
 
-        const [, , name, args, _, retType = ""] = header;
+        const [, , name, args, , retType = ""] = header;
 
         const argsList = args.split(',').map(arg => {
             const [name, type = ""] = arg.trim().split(':');
@@ -79,6 +79,8 @@ export class Task {
         );
     }
 
+    // TODO: perform validation and drop the any type
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static fromJSON(json: any) {
         return new Task(
             json.description,

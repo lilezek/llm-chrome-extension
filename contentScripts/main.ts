@@ -13,7 +13,13 @@ const smartBrowsing = {
     setDOMDirty,
 } as const;
 
-(window as any).smartBrowsing = smartBrowsing;
+declare global {
+    interface Window {
+        smartBrowsing: typeof smartBrowsing;
+    }
+}
+
+window.smartBrowsing = smartBrowsing;
 
 /**
  * These three types are used to enforce types on the extension side of the code.

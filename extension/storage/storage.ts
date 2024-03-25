@@ -1,4 +1,4 @@
-type ClassWithJsonStatic<T> = { fromJSON(json: any): T; };
+type ClassWithJsonStatic<T> = { fromJSON(json: unknown): T; };
 
 export abstract class Storage {
     constructor(protected key: string) {}
