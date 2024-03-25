@@ -76,14 +76,15 @@ export function getFullText(root = document.documentElement) {
 export function getTabbableVisibleElements(intention?: "click" | "type" | "select") {
     let query = "";
     switch (intention) {
-        case "click":
-            query = 'a, button, input, select, select > option textarea, [tabindex], [contenteditable]';
-            break;
         case "type":
             query = 'input, textarea, [contenteditable]';
             break;
         case "select":
             query = 'select, select > option';
+            break;
+        case "click":
+        default:
+            query = 'a, button, input, select, select > option textarea, [tabindex], [contenteditable]';
             break;
     }
 
@@ -96,7 +97,7 @@ export function getTabbableVisibleElements(intention?: "click" | "type" | "selec
                 }
             }
 
-            if (el instanceof HTMLAnchorElement && !el.href) {
+            if (el instanceof HTMLAnchorElement && !el.href && el.tabIndex === -1) {
                 return false;
             }
 
