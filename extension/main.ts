@@ -11,8 +11,8 @@ const ctx = new ChromeBrowsingContext(chatgpt);
 chat.writeAssistantMessage('Write your task, one step at a time. Write "done" when you are finished.');
 const steps: string[] = [];
 
-document.getElementById('send')!.addEventListener('click', async () => {
-    const userInput = chat.readInput();
+chat.addEventListener('send', async (ev) => {
+    const userInput = ev.detail
     if (userInput.trim().toLowerCase() === 'done') {
         chat.writeAssistantMessage('Generating task...');
         const codeString = await chatgpt.generateTasks(steps);
@@ -24,9 +24,7 @@ document.getElementById('send')!.addEventListener('click', async () => {
         task.save();
     } else {
         steps.push(userInput);
-        chat.writeUserMessage(steps[steps.length - 1]);
     }
-    chat.clearInput();
 });
 
 document.getElementById('exec')!.addEventListener('click', async () => {
