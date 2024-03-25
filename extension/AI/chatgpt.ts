@@ -1,6 +1,7 @@
 import { ChatGPTAPI, ChatGPTError } from 'chatgpt';
 import systemPromptGenerateTaskJson from './system_prompt_generate_task_en.json' with { type: "json" };
 import systemPromptFindInTextJson from './system_prompt_find_in_text_en.json' with { type: "json" };
+import { Task } from '../tasks/task.js';
 import { LocalStorage } from '../storage/localstorage.js';
 
 const systemPromptGenerateTask = systemPromptGenerateTaskJson[0];
@@ -67,7 +68,12 @@ export class ChatGPTChat {
     }
 
     async generateTasks(steps: string[]) {
-        const systemPrompt = systemPromptGenerateTask;
+        const typescriptTasks = Task.getTasksInTypescriptDefinition();
+        let systemPrompt = systemPromptGenerateTask;
+        if (typescriptTasks.length) {
+            const userSavedTasks = "Additionally use these user defined tasks:\n```typescript" + typescriptTasks + "```";
+            systemPrompt = `${systemPromptGenerateTask}\n\n${userSavedTasks}`;
+        }
 
         // The steps preceeded by a number and a dot
         const userPrompt = steps.map((step, index) => `${index + 1}. ${step}`).join("\n");

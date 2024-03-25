@@ -8,9 +8,11 @@ Produce a javascript function with a meaningful name. This is the list of availa
 class Tab {
     navigateTo(url: string): Promise<void>
     // Finds an element using an LLM.
-    // For example, 'The contact John Doe', 'The search bar', 'The message input bar'...
-    findElement(whatToFind: string, intention: 'click' | 'type'): Promise<void>
+    // ('The contact John Doe', 'click'), ('The search bar', 'type'), ('select spanish language', 'select')
+    findElement(whatToFind: string, filterBy: 'click' | 'type' | 'select'): Promise<void>
+    // Types in the last found element
     sendKeysToElement(...keys: (string | number)[]): Promise<void>
+    // Clicks the last found element.
     clickElement(): Promise<void>
     // Finds a regular expression in the page. 
     // Useful for finding patterns like ip addresses, phone numbers, email addresses and such.
