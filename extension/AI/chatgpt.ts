@@ -1,11 +1,13 @@
 import { ChatGPTAPI, ChatGPTError } from 'chatgpt';
 import systemPromptGenerateTaskJson from './system_prompt_generate_task_en.json' with { type: "json" };
 import systemPromptFindInTextJson from './system_prompt_find_in_text_en.json' with { type: "json" };
+import systemPromptRefactorCodeJson from './system_prompt_refactor_code_en.json' with { type: "json" };
 import { Task } from '../tasks/task.js';
 import { LocalStorage } from '../storage/localstorage.js';
 
 const systemPromptGenerateTask = systemPromptGenerateTaskJson[0];
 const systemPromptFindInText = systemPromptFindInTextJson[0];
+const systemPromptRefactorCode = systemPromptRefactorCodeJson[0];
 
 const tripleBacktickRE = /```(typescript|javascript)?(.*)```/s;
 
@@ -89,6 +91,18 @@ export class ChatGPTChat {
     async findInText(query: string, text: string) {
         const systemPrompt = systemPromptFindInText;
         const userPrompt = query + "\n\n```\n" + text + "\n```";
+        const result = await this.llmChat(systemPrompt, userPrompt, 3);
+
+        if (result.match(tripleBacktickRE)) {
+            return result.match(tripleBacktickRE)![2];
+        } else {
+            return result;
+        }
+    }
+
+    async refactorCode(code: string) {
+        const systemPrompt = systemPromptRefactorCode;
+        const userPrompt = "```typescript\n" + code + "\n```";
         const result = await this.llmChat(systemPrompt, userPrompt, 3);
 
         if (result.match(tripleBacktickRE)) {

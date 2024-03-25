@@ -3,6 +3,7 @@ import { LocalStorage } from "../storage/localstorage.js";
 
 // TODO: replace this regex with a parser, won't work if one of the argument is a function, for example
 // async function name(f: () => void) ...
+const headerCommentRE = /\/\[\s\S]*?\*\/|([^:]|^)\/\/(.*)$/m;
 const functionHeaderRE = /(async)?\s*function\s*([a-zA-Z0-9]+)\s*\(([^)]*)\)\s*(:([^{]*))?/s;
 const bodyRE = /{(.*)}/s;
 
@@ -49,6 +50,13 @@ export class Task {
 
     static fromCode(code: string) {
         code = code.trim();
+
+        const comment = code.match(headerCommentRE);
+        let description = '';
+        if (comment) {
+            description = comment[2].trim();
+        }
+
         const header = code.match(functionHeaderRE);
         if (!header) {
             throw new Error('Invalid function header');
@@ -57,8 +65,8 @@ export class Task {
         const [, , name, args, , retType = ""] = header;
 
         const argsList = args.split(',').map(arg => {
-            const [name, type = ""] = arg.trim().split(':');
-            return { name: name.trim(), type: type.trim() ?? 'any' };
+            const [name, type] = arg.trim().split(':');
+            return { name: name.trim(), type: type?.trim() ?? 'any' };
         })
         // Filter the tab argument to avoid duplicates
         .filter(arg => arg.name != "tab");
@@ -71,10 +79,10 @@ export class Task {
         const [, codeBody] = body;
 
         return new Task(
-            `Task generated from code: ${code}`,
+            description.trim(),
             name.trim(),
             argsList,
-            retType.trim() ?? 'Promise<any>',
+            retType.trim() || 'Promise<any>',
             codeBody.trim(),
         );
     }
@@ -95,9 +103,17 @@ export class Task {
         let code: string[] = [];
         for (const task of Task.iterator()) {
             const argNames = task.args.map(arg => `${arg.name}: ${arg.type}`);
-            code = [...code, `async function ${task.name}(${["tab: TabContext", ...argNames].join(', ')}): Promise<${task.retValue}>;`];
+            code = [...code, `${task.description}\nasync function ${task.name}(${["tab: TabContext", ...argNames].join(', ')}): ${task.retValue};`];
         }
         return code.join('\n');
+    }
+
+    getTypescript() {
+        const argNames = this.args.map(arg => `${arg.name}: ${arg.type}`);
+        return `// ${this.description}
+        async function ${this.name}(tab: TabContext, ${argNames.join(', ')}): ${this.retValue} {
+            ${this.code}
+        }`;
     }
 
     run(sandbox: SandboxContext, ...args: string[]) {
