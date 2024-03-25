@@ -3,7 +3,7 @@ import { LocalStorage } from "../storage/localstorage.js";
 
 // TODO: replace this regex with a parser, won't work if one of the argument is a function, for example
 // async function name(f: () => void) ...
-const functionHeaderRE = /(async)?\s*function\s*([a-zA-Z0-9]+)\s*\(([^)]*)\)\s*:([^{]*)/s;
+const functionHeaderRE = /(async)?\s*function\s*([a-zA-Z0-9]+)\s*\(([^)]*)\)\s*(:([^{]*))?/s;
 const bodyRE = /{(.*)}/s;
 
 interface Argument {
@@ -54,10 +54,10 @@ export class Task {
             throw new Error('Invalid function header');
         }
 
-        const [, , name, args, retType] = header;
+        const [, , name, args, _, retType = ""] = header;
 
         const argsList = args.split(',').map(arg => {
-            const [name, type] = arg.trim().split(':');
+            const [name, type = ""] = arg.trim().split(':');
             return { name: name.trim(), type: type.trim() ?? 'any' };
         })
         // Filter the tab argument to avoid duplicates
