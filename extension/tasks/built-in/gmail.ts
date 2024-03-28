@@ -3,20 +3,20 @@ import { Task } from "../task.js";
 const sendEmailGmail = `async function sendEmailGmail(tab: Tab, to: string, subject: string, body: string): Promise<void> {
     await tab.navigateTo('https://mail.google.com')
 
-    await tab.findElement('Compose', "click")
-    await tab.clickElement()
+    const compose = await tab.findElement('Compose', "click")
+    await tab.clickElement(compose)
    
-    await tab.findElement('To input bar', "type")
-    await tab.sendKeysToElement(to)
+    const toElement = await tab.findElement('To input bar', "type")
+    await tab.sendKeysToElement(toElement, to)
    
-    await tab.findElement('Subject', "type")
-    await tab.sendKeysToElement(subject)
+    const subjectElement = await tab.findElement('Subject', "type")
+    await tab.sendKeysToElement(subjectElement, subject)
     
-    await tab.findElement('Message body', "type")
-    await tab.sendKeysToElement(body)
+    const bodyElement = await tab.findElement('Message body', "type")
+    await tab.sendKeysToElement(bodyElement, body)
 
-    await tab.findElement('Send', "click")
-    await tab.clickElement()
+    const sendButton = await tab.findElement('Send', "click")
+    await tab.clickElement(sendButton)
 }`;
 
 Task.fromCode(sendEmailGmail).save(/*ignoreExisting =*/ true);
