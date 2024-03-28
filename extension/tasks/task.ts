@@ -1,11 +1,9 @@
 import { SandboxContext } from "../sandbox/context.js";
 import { LocalStorage } from "../storage/localstorage.js";
+import { ParseTypescriptFunction, ParseTypescriptFunctionUsage } from "./parser.js";
 
-// TODO: replace this regex with a parser, won't work if one of the argument is a function, for example
-// async function name(f: () => void) ...
+// TODO: don't use this regex and use the typescript parser instead
 const headerCommentRE = /\/\[\s\S]*?\*\/|([^:]|^)\/\/(.*)$/m;
-const functionHeaderRE = /(async)?\s*function\s*([a-zA-Z0-9]+)\s*\(([^)]*)\)\s*(:([^{]*))?/s;
-const bodyRE = /{(.*)}/s;
 
 interface Argument {
     name: string;
@@ -14,11 +12,11 @@ interface Argument {
 
 export class Task {
     constructor(
-        private description: string,
-        private name: string,
-        private args: Argument[],
-        private retValue: string,
-        private code: string,
+        public readonly description: string,
+        public readonly name: string,
+        public readonly args: Argument[],
+        public readonly retValue: string,
+        public readonly code: string,
     ) { }
 
     private toJavascript() {
@@ -49,6 +47,7 @@ export class Task {
     }
 
     static fromCode(code: string) {
+        const [f] = ParseTypescriptFunction(code);
         code = code.trim();
 
         const comment = code.match(headerCommentRE);
@@ -57,33 +56,12 @@ export class Task {
             description = comment[2].trim();
         }
 
-        const header = code.match(functionHeaderRE);
-        if (!header) {
-            throw new Error('Invalid function header');
-        }
-
-        const [, , name, args, , retType = ""] = header;
-
-        const argsList = args.split(',').map(arg => {
-            const [name, type] = arg.trim().split(':');
-            return { name: name.trim(), type: type?.trim() ?? 'any' };
-        })
-        // Filter the tab argument to avoid duplicates
-        .filter(arg => arg.name != "tab");
-
-        const body = code.match(bodyRE);
-        if (!body) {
-            throw new Error('Invalid function body');
-        }
-
-        const [, codeBody] = body;
-
         return new Task(
             description.trim(),
-            name.trim(),
-            argsList,
-            retType.trim() || 'Promise<any>',
-            codeBody.trim(),
+            f.name,
+            f.args,
+            f.retValue,
+            f.body
         );
     }
 
@@ -108,6 +86,14 @@ export class Task {
         return code.join('\n');
     }
 
+    findUsage(code: string) {
+        const [usage] = ParseTypescriptFunctionUsage(code, this.name);
+        if (!usage) {
+            return [];
+        }
+        return usage.args;
+    }
+
     getTypescript() {
         const argNames = this.args.map(arg => `${arg.name}: ${arg.type}`);
         return `// ${this.description}
@@ -116,7 +102,7 @@ export class Task {
         }`;
     }
 
-    run(sandbox: SandboxContext, ...args: string[]) {
+    run(sandbox: SandboxContext, ...args: unknown[]) {
         const argNames = this.args.map(arg => arg.name);
         const code = `(async (${["tab", ...argNames].join(", ")}) => {
             ${this.code}

@@ -36,8 +36,13 @@ chat.addEventListener('send', async (ev) => {
             steps.length = 0;
 
             lastTask = Task.fromCode(codeString);
+            const exampleUsage = lastTask.findUsage(codeString);
             const sandbox = new SandboxContext(await ctx.getCurrentTab());
-            await lastTask.run(sandbox);
+            const result = await lastTask.run(sandbox, ...exampleUsage);
+
+            if (typeof result === "string") {
+                chat.writeAssistantMessage(result);
+            }
 
             chat.writeAssistantMessage('Task completed. If everything went good, write "save" to save the task.');
             break;
