@@ -3,6 +3,7 @@ import { Tab } from "../browser/browser.js";
 export class SandboxContext {
     private iframe: HTMLIFrameElement;
     private readyPromise: Promise<void>;
+    private responsePromiseSolver?: (value: unknown) => void;
 
     constructor(private tab: Tab) {
         this.iframe = document.createElement('iframe');
@@ -24,13 +25,16 @@ export class SandboxContext {
             }
 
             const { data } = event;
-            const { type, method, args } = data;
+            const { type, method, args, result } = data;
             
             if (type === "tab") {
                 // @ts-expect-error I'm calling a method on the tab object and there is no suitable type for this
-                const result = await this.tab[method](...args);
+                const methodResult = await this.tab[method](...args);
                 // Send the result back to the iframe
-                this.iframe.contentWindow!.postMessage({ type: "tab_response", result }, '*');
+                this.iframe.contentWindow!.postMessage({ type: "tab_response", result: methodResult }, '*');
+            } else if (type === "eval_response") {
+                this.responsePromiseSolver?.(result);
+                this.responsePromiseSolver = undefined;
             }
         });
     }
@@ -41,8 +45,14 @@ export class SandboxContext {
 
     async eval(code: string, ...args: unknown[]) {
         await this.readyPromise;
-        // Send a message to the iframe contining the code to be executed
+
+        const responsePromise = new Promise((resolve) => {
+            this.responsePromiseSolver = resolve;
+        });
+
         this.iframe.contentWindow!.postMessage({ type: "eval", code, args }, '*');
+
+        return responsePromise;
     }
 }
 

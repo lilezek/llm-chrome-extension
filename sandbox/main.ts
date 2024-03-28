@@ -11,13 +11,14 @@ declare global {
 
 window.Key = KeyCodes;
 
-type EvalFunction = (tab: typeof Tab, ...args: unknown[]) => void;
+type EvalFunction = (tab: typeof Tab, ...args: unknown[]) => unknown;
 
-window.addEventListener('message', (event) => {
+window.addEventListener('message', async (event) => {
     const { data } = event;
     const { type, code, args } = data;
     if (type == "eval") {
         const f = eval(code) as EvalFunction;
-        f.call(window, Tab, ...args);
+        const result = await f.call(window, Tab, ...args);
+        window.parent.postMessage({ type: "eval_response", result }, '*');
     }
 });
