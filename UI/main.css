@@ -13,3 +13,7 @@ html, body {
 .grow {
     flex-grow: 1;
 }
+
+#chat, #input {
+    font-size: x-large;
+}
