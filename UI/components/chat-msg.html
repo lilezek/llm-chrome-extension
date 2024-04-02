@@ -1,0 +1,47 @@
+<template>
+    <style>
+        :host {
+            display: flex;
+            padding: 8px;
+            border-radius: 8px;
+            line-height: 24px;
+            justify-content: space-between;
+        }
+
+        :host(:hover) #delete {
+            display: block;
+        }
+
+        :host(.assistant) {
+            background-color: rgb(0, 139, 111);
+            color: white;
+            text-align: left;
+        }
+
+        :host(.user) {
+            background-color: rgb(0, 32, 139);
+            color: white;
+            text-align: right;
+        }
+        #delete {
+            display: none;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            margin: 0;
+            padding: 0;
+        }
+        #delete svg {
+            height: 24px;
+            width: 24px;
+        }
+    </style>
+    <slot name="message">...</slot>
+    <button id="delete">
+        <!-- SVG of a trash can -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+            <path
+                d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z" />
+        </svg>
+    </button>
+</template>

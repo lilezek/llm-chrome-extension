@@ -1,0 +1,35 @@
+<template>
+    <style>
+        :host {
+            display: flex;
+            gap: 8px;
+        }
+
+        #input {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            padding: 8px;
+            font-family: monospace;
+        }
+        #run {
+            background-color: #ffffff;
+            color: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+        }
+        #run svg {
+            fill: #696969;
+            height: 24px;
+            width: 24px;
+        }
+    </style>
+    <input type="text" id="input" />
+    <button id="run">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+            <path d="M320-200v-560l440 280-440 280Zm80-280Zm0 134 210-134-210-134v268Z" />
+        </svg>
+    </button>
+</template>
