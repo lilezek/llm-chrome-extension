@@ -5,6 +5,32 @@
             flex-direction: column;
             gap: 8px;
         }
+
+        .bottom-bar {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            padding: 8px 16px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #add-step {
+            background-color: #007bff;
+        }
+
+        #save-task {
+            background-color: #28a745;
+        }
     </style>
     <slot name="steps">...</slot>
+    <div class="bottom-bar">
+        <button id="add-step">Add Step</button>
+        <button id="save-task">Save Task</button>
+    </div>
 </template>
