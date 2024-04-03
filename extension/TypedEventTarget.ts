@@ -1,4 +1,4 @@
-interface CustomEventTarget<Map extends {[key: string]: CustomEvent}> extends EventTarget {
+export interface CustomEventTarget<Map extends {[key: string]: CustomEvent}> extends EventTarget {
     addEventListener<K extends keyof Map>(
         type: K,
         listener: (ev: Map[K]) => void,
