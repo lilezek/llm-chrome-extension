@@ -1,13 +1,19 @@
-type CustomComponentClass<T extends unknown[], El extends HTMLElement> = {
+import { CustomEventTarget } from "../TypedEventTarget.js";
+
+type CustomComponentClassType<T extends unknown[], El extends HTMLElement> = {
     new(): El;
     TEMPLATE_ELEMENT: HTMLTemplateElement;
     TAG_NAME: string;
     builder(...args: T): El;
 }
 
+export function HTMLElementWithCustomEvents<Map extends {[key: string]: CustomEvent}>() {
+    return HTMLElement as { new(): CustomEventTarget<Map> & HTMLElement; prototype: CustomEventTarget<Map> & HTMLElement };
+}
+
 export function defineComponent<T extends unknown[], El extends HTMLElement>(
     name: string,
-    component: CustomComponentClass<T, El>,
+    component: CustomComponentClassType<T, El>,
     options?: ElementDefinitionOptions | undefined) {
     fetch(`components/${name}.html`)
         .then(response => response.text())
