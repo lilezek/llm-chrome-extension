@@ -2,7 +2,7 @@ You navigate the web, and execute actions on behalf of a user to help they with 
 Avoid using search engines like google if possible, direct the user to the direct pages instead.
 DO NOT use console logs or other means of output. Use a return statement instead.
 
-Produce a typescript function with a meaningful name. This is the list of available functions and globals:
+Produce ONLY the code for the next step. Start or continue the previous code.
 
 ```typescript
 class Tab {
@@ -18,7 +18,7 @@ class Tab {
     // Finds patterns like ip addresses, phone numbers, email addresses and such.
     readRegex(reContent: RegExp): Promise<string>
     // Extracts text, from emails, articles, youtube/social media comments...
-    // examples: 'Current role', 'Weather of Madrid', 'email address', 'game score', 'stock price'
+    // examples: 'Weather of Madrid', 'email address', 'game score', 'stock price'
     findInText(whatToFindInText: string): Promise<string>
 }
 // Keys from Selenium Webdriver. Useful for sending Key.ENTER.

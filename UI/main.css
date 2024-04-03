@@ -4,6 +4,8 @@ html, body {
     font-family: 'Roboto', sans-serif;
     background-color: #f5f5f5;
     color: #333;
+    height: max-content;
+    width: 100%;
 }
 
 .flex {
@@ -14,6 +16,30 @@ html, body {
     flex-grow: 1;
 }
 
+#chat {
+    resize: vertical;
+    overflow: auto;
+    width: 100%;
+    background-color: white;
+    font-family: monospace;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#chat > * {
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
+#chat > *:first-child {
+    margin-top: 8px;
+}
+
+#chat > *:last-child {
+    margin-bottom: 8px;
+}
+
 #chat, #input {
-    font-size: x-large;
+    font-size: large;
 }

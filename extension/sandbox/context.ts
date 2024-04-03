@@ -39,6 +39,10 @@ export class SandboxContext {
         });
     }
 
+    controlTab(tab: Tab) {
+        this.tab = tab;
+    }
+
     dispose() {
         document.body.removeChild(this.iframe);
     }

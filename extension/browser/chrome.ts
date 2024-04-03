@@ -121,7 +121,6 @@ export class ChromeTab extends Tab {
     }
 
     async findElementImpl(description: string, intention: "click" | "type" | "select"): Promise<Element> {
-        chat.writeAssistantMessage(`Finding element: ${description}`);
         const context = `${this.title} - ${this.url}`;
 
         // First, try to find the element from tabbable elements
@@ -133,6 +132,9 @@ export class ChromeTab extends Tab {
             if (DEBUG) {
                 debug.log(`Element found from tabbable elements: ${selectors[found]}`);
             }
+            this.runInClient("highlightElement", {
+                selector: selectors[found]
+            });
             return {
                selector: selectors[found]
             };
@@ -147,6 +149,9 @@ export class ChromeTab extends Tab {
             if (DEBUG) {
                 debug.log(`Element found from whole page: ${res.xpath}`);
             }
+            this.runInClient("highlightElement", {
+                xpath: res.xpath
+            });
             return {
                 xpath: res.xpath
             };

@@ -69,7 +69,7 @@ export class ChatGPTChat {
         return response.text;
     }
 
-    async generateTasks(steps: string[]) {
+    async generateStepCode(previousSteps: string[], lastStep: string, currentCode: string) {
         const typescriptTasks = Task.getTasksInTypescriptDefinition();
         let systemPrompt = systemPromptGenerateTask;
         if (typescriptTasks.length) {
@@ -78,7 +78,18 @@ export class ChatGPTChat {
         }
 
         // The steps preceeded by a number and a dot
-        const userPrompt = steps.map((step, index) => `${index + 1}. ${step}`).join("\n");
+        const userPrompt = `
+        Steps:
+        ${previousSteps.map((step, index) => `${index + 1}. ${step}`).join("\n")}
+        
+        Next step:
+        ${lastStep}
+        
+        Current code:
+        \`\`\`typescript
+        ${currentCode}
+        \`\`\`
+        `
         const result = await this.llmChat(systemPrompt, userPrompt, 3);
 
         if (result.match(tripleBacktickRE)) {
