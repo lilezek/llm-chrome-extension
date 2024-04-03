@@ -1,6 +1,6 @@
 import { debug } from "./debug.js";
 import { sendKeysToElement, clickElement } from "./interact.js";
-import { getFullDOM, getTabbableVisibleElements, getFullText } from "./queryDOM.js";
+import { getFullDOM, getTabbableVisibleElements, getFullText, highlightElement } from "./queryDOM.js";
 import { isDOMStable, setDOMDirty } from "./stableDOM.js";
 
 const smartBrowsing = {
@@ -11,6 +11,7 @@ const smartBrowsing = {
     getFullText,
     isDOMStable,
     setDOMDirty,
+    highlightElement,
 } as const;
 
 declare global {

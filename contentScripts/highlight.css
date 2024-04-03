@@ -1,0 +1,4 @@
+.smart-browsing-highlight {
+    box-shadow: 0px 0px 0px 18px red !important;
+    transition: box-shadow 0.5s !important;
+}

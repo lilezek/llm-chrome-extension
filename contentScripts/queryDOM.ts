@@ -1,3 +1,11 @@
+import { SelectOneElement, Selector } from "./utils.js";
+
+// Finds an element in the DOM including shadow roots.
+function deepQuerySelectorAll(el: { querySelectorAll: (query: string) => NodeListOf<HTMLElement> }, selector: string) {
+    // TODO: implement from https://stackoverflow.com/questions/29629492/how-to-query-elements-within-shadow-dom-from-outside-in-dart
+    return el.querySelectorAll(selector);
+}
+
 function GetCcssPathFromElement(el: Node | null) {
     const path: string[] = [];
     while (el && el.nodeType === Node.ELEMENT_NODE) {
@@ -145,4 +153,17 @@ export function XPath(xpath: string) {
         currentNode = result.iterateNext();
     }
     return nodes;
+}
+
+export function highlightElement(selector: Selector, timeout = 2000) {
+    const el = SelectOneElement(selector);
+    
+    if (!el) {
+        return;
+    }
+
+    el.classList.add('smart-browsing-highlight');
+    setTimeout(() => {
+        el.classList.remove('smart-browsing-highlight');
+    }, timeout);
 }
